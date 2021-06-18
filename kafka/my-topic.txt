@@ -1,0 +1,21 @@
+cat << EOF | kubectl create -n my-kafka-project -f -
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: input
+  labels:
+    strimzi.io/cluster: "my-cluster"
+spec:
+  partitions: 1
+  replicas: 1
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: output
+  labels:
+    strimzi.io/cluster: "my-cluster"
+spec:
+  partitions: 1
+  replicas: 1
+EOF
