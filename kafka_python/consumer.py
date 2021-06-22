@@ -5,9 +5,12 @@ from kafka import KafkaProducer
 from rfc3339 import rfc3339
 import time
 import datetime
+## Lib OS
+import os
 
 #### Broker apache kafka, for produce and consume msg
-broker_kafka = '129.213.117.48:9092'
+#broker_kafka = '127.0.0.1:9092'
+broker_kafka = os.environ.get('BROKER_KAFKA')
 #### Conf Kafka Producer
 producer = KafkaProducer(value_serializer=str.encode, bootstrap_servers=[broker_kafka])
 
