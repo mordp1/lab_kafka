@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: py-producer
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      bb: py-producer
+  template:
+    metadata:
+      labels:
+        bb: py-producer
+    spec:
+      containers:
+      - name: python-producer
+        image: mordp/producer_kfkpy:1.0
+        env:
+        - name: BROKER_KAFKA
+          value: localhost:30094

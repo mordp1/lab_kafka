@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumer
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      bb: py-consumer
+  template:
+    metadata:
+      labels:
+        bb: py-consumer
+    spec:
+      containers:
+      - name: python-consumer
+        image: mordp/consumer_kfkpy:1.0
+        env: 
+        - name: BROKER_KAFKA
+          value: localhost:30094

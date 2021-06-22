@@ -1,0 +1,24 @@
+FROM ubuntu
+
+# Creating Application Source Code Directory
+RUN mkdir -p /app/
+
+# Setting Home Directory for containers
+WORKDIR /app/
+
+# Installing python dependencies
+#COPY requirements.txt /app
+RUN apt-get update -y && apt-get install -y python3 python3-pip  && apt-get clean
+RUN pip install --user virtualenv && pip install --no-cache-dir kafka && pip install --no-cache-dir kafka-python && pip install --no-cache-dir rfc3339 &&  pip install --no-cache-dir datetime
+
+# Copying src code to Container
+COPY . /app
+
+# Application Environment variables
+#ENV APP_ENV development
+
+# Setting Persistent data
+VOLUME ["/app-data"]
+
+# Running Python Application
+CMD ["python3", "consumer.py"]
