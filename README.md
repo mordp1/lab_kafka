@@ -14,7 +14,7 @@
   vagrant ssh
   sudo su -
   cd /vagrant/
-  ansible-playbook main.yaml main.yaml
+  ansible-playbook main.yaml
  ```
 #### Acces the Systems in your computer: 
  
