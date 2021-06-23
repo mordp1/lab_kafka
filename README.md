@@ -4,7 +4,7 @@ Minimum Requirements :
  - Vagrant 
  - Virtualbox
  - Minimum 6 GB RAM
- - 2 Cores
+ - 3 Cores
  
 # To execute all the system :
  
@@ -27,3 +27,32 @@ Grafana:
 
 Kafka Brokers: 
  - 127.0.0.1:30094
+
+# Details Off all
+
+- Vagrant:
+box = mrvantage/centos7-minikube
+
+- Helm: 
+https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 
+
+-Kafka:
+https://strimzi.io/
+
+-Prometheus:
+https://github.com/bitnami/charts/tree/master/bitnami/kube-prometheus
+
+-Grafana:
+https://grafana.github.io/helm-charts
+
+-Kafdrop:
+ https://github.com/obsidiandynamics/kafdrop 
+ 
+ -Producer and Consumer Kafka:
+ https://hub.docker.com/repository/docker/mordp/producer_kfkpy
+ https://hub.docker.com/repository/docker/mordp/consumer_kfkpy
+ 
+ 
+
+
+
