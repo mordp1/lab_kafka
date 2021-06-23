@@ -13,7 +13,7 @@ Minimum Requirements :
   - vagrant up
   - vagrant ssh
   - sudo su -
-  - cd vagrant/
+  - cd /vagrant/
   - ansible-playbook main.yaml main.yaml
  
 # Acces the Systems in your computer: 
