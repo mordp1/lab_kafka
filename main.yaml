@@ -41,7 +41,15 @@
          port: 30094
          delay: 120
        - name: Run install Kafkadrop
-         shell: /vagrant/kafka/kafdrop.sh
+         shell: |
+           set timeout 300
+           git clone https://github.com/obsidiandynamics/kafdrop
+           cd kafdrop/
+           helm upgrade -i kafdrop chart --set image.tag=3.27.0 \
+            --set kafka.brokerConnect=my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092 \
+            --set server.servlet.contextPath="/" \
+            --set jvm.opts="-Xms32M -Xmx64M"
+           exit 0
          args:
             executable: /bin/bash
        - name: Wait for Kafkadrop 
