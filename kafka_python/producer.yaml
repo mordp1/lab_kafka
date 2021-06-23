@@ -18,4 +18,4 @@ spec:
         image: mordp/producer_kfkpy:1.0
         env:
         - name: BROKER_KAFKA
-          value: localhost:30094
+          value: my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092
