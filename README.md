@@ -36,19 +36,19 @@ box = mrvantage/centos7-minikube
 - Helm: 
 https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 
 
--Kafka:
+- Kafka:
 https://strimzi.io/
 
--Prometheus:
+- Prometheus:
 https://github.com/bitnami/charts/tree/master/bitnami/kube-prometheus
 
--Grafana:
+- Grafana:
 https://grafana.github.io/helm-charts
 
--Kafdrop:
+- Kafdrop:
  https://github.com/obsidiandynamics/kafdrop 
  
- -Producer and Consumer Kafka:
+ - Producer and Consumer Kafka:
  https://hub.docker.com/repository/docker/mordp/producer_kfkpy
  https://hub.docker.com/repository/docker/mordp/consumer_kfkpy
  
