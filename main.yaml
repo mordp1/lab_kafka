@@ -1,93 +1,91 @@
-# Setting host
-- hosts: localhost
-  gather_facts: false
-#Variables
- # vars:
- #   ansible_python_interpreter: '{{ ansible_playbook_python }}'
- #   image_name: hello-go
- #   image_tag: latest
- #   replicas: 4
-# Pre-Tasks to validate if Minikube is running
-  pre_tasks:
-    - name: Check Minikube's status.
-      command: minikube status
-      register: minikube_status
-      changed_when: false
-      ignore_errors: true
-    # Otherwise will start minikube
-    - name: Start Minikube if it's not running.
-      command: minikube start
-      when: "not minikube_status.stdout or 'Running' not in minikube_status.stdout"
-# Check existing images
-  tasks:
-    - name: Get existing image hash.
-      shell: |
-        eval $(minikube docker-env)
-        docker images -q {{ image_name }}
-      register: image_hash
-      changed_when: false
-# Otherwise will create an image from Dockerfile location
-    - name: Build image if it's not already built.
-      shell: |
-        eval $(minikube docker-env)
-        docker build -t {{ image_name }} ../GoProject 
-      when: not image_hash.stdout
-# Create Kubernetes resources to run Hello Go.
-    - name: Create a Deployment for Hello Go.
-      k8s:
-        state: present
-        definition:
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: hello-go
-            namespace: default
-          spec:
-            replicas: "{{ replicas }}"
-            selector:
-              matchLabels:
-                app: hello-go
-            template:
-              metadata:
-                labels:
-                  app: hello-go
-              spec:
-                containers:
-                - name: hello-go
-                  image: "{{ image_name }}:{{ image_tag }}"
-                  imagePullPolicy: IfNotPresent
-                  ports:
-                  - containerPort: 8180
-# Create Kubernetes Service (DNS required)
-    - name: Create a Service for Hello Go.
-      k8s:
-        state: present
-        definition:
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: hello-go
-            namespace: default
-          spec:
-            type: LoadBalancer
-            ports:
-            - port: 8180
-              targetPort: 8180
-            selector:
-              app: hello-go
-post_tasks:
-    #Example export using minikube services
-    - name: Expose Hello Go on the host via Minikube.
-      command: minikube service hello-go --url=true
-      changed_when: false
-      register: minikube_service
-    - debug:
-        msg: "Hello Go URL: {{ minikube_service['stdout_lines'][0] }}"
-- name: Verify Hello Go is responding.
-      uri:
-        url: "{{ minikube_service['stdout_lines'][0] }}/test"
-        return_content: true
-      register: hello_go_response
-      failed_when: "'/test' not in hello_go_response.content"
-- debug:
-        msg: "Testing URL Hello GO Requested: {{hello_go_response.content}} Status: {{hello_go_response.status}}"
+- name: Create a k8s namespace
+  community.kubernetes.k8s:
+    name: testing
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Create a Service object from an inline definition
+  community.kubernetes.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: web
+        namespace: testing
+        labels:
+          app: galaxy
+          service: web
+      spec:
+        selector:
+          app: galaxy
+          service: web
+        ports:
+        - protocol: TCP
+          targetPort: 8000
+          name: port-8000-tcp
+          port: 8000
+
+- name: Remove an existing Service object
+  community.kubernetes.k8s:
+    state: absent
+    api_version: v1
+    kind: Service
+    namespace: testing
+    name: web
+
+# Passing the object definition from a file
+
+- name: Create a Deployment by reading the definition from a local file
+  community.kubernetes.k8s:
+    state: present
+    src: /testing/deployment.yml
+
+- name: >-
+    Read definition file from the Ansible controller file system.
+    If the definition file has been encrypted with Ansible Vault it will automatically be decrypted.
+  community.kubernetes.k8s:
+    state: present
+    definition: "{{ lookup('file', '/testing/deployment.yml') | from_yaml }}"
+
+- name: Read definition template file from the Ansible controller file system
+  community.kubernetes.k8s:
+    state: present
+    template: '/testing/deployment.j2'
+
+- name: Read definition template file from the Ansible controller file system that uses custom start/end strings
+  community.kubernetes.k8s:
+    state: present
+    template:
+      path: '/testing/deployment.j2'
+      variable_start_string: '[['
+      variable_end_string: ']]'
+
+- name: fail on validation errors
+  community.kubernetes.k8s:
+    state: present
+    definition: "{{ lookup('template', '/testing/deployment.yml') | from_yaml }}"
+    validate:
+      fail_on_error: yes
+
+- name: warn on validation errors, check for unexpected properties
+  community.kubernetes.k8s:
+    state: present
+    definition: "{{ lookup('template', '/testing/deployment.yml') | from_yaml }}"
+    validate:
+      fail_on_error: no
+      strict: yes
+
+# Download and apply manifest
+- name: Download metrics-server manifest to the cluster.
+  ansible.builtin.get_url:
+    url: https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+    dest: ~/metrics-server.yaml
+    mode: '0664'
+
+- name: Apply metrics-server manifest to the cluster.
+  community.kubernetes.k8s:
+    state: present
+    src: ~/metrics-server.yaml
+Return Values
