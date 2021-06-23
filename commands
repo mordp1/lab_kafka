@@ -4,6 +4,11 @@ Vangrant ssh
 yum install -y git
 curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 
+ansible-galaxy collection install kubernetes.core
+ansible-galaxy collection install community.kubernetes
+
+ansible-playbook main.yaml
+cd vagrant/
 ## Kafka 
 
 kubectl create namespace kafka
@@ -38,7 +43,7 @@ kubectl apply -f /vagrant/prometheus/prometheus.yaml -n monitoring
 
 helm repo add grafana https://grafana.github.io/helm-charts
 
-helm install grafana -f /vagrant/grafana/grafana.yaml -n monitoring
+helm install grafana -f /vagrant/grafana/grafana.yaml grafana/grafana -n monitoring
 
 # http://127.0.0.1:30300
 

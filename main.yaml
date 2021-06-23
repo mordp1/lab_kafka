@@ -1,91 +1,109 @@
-- name: Create a k8s namespace
-  community.kubernetes.k8s:
-    name: testing
-    api_version: v1
-    kind: Namespace
-    state: present
+#
+# Configure
+#
+- hosts: localhost
+  become: yes
+  connection: local
 
-- name: Create a Service object from an inline definition
-  community.kubernetes.k8s:
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Service
-      metadata:
-        name: web
-        namespace: testing
-        labels:
-          app: galaxy
-          service: web
-      spec:
-        selector:
-          app: galaxy
-          service: web
-        ports:
-        - protocol: TCP
-          targetPort: 8000
-          name: port-8000-tcp
-          port: 8000
-
-- name: Remove an existing Service object
-  community.kubernetes.k8s:
-    state: absent
-    api_version: v1
-    kind: Service
-    namespace: testing
-    name: web
-
-# Passing the object definition from a file
-
-- name: Create a Deployment by reading the definition from a local file
-  community.kubernetes.k8s:
-    state: present
-    src: /testing/deployment.yml
-
-- name: >-
-    Read definition file from the Ansible controller file system.
-    If the definition file has been encrypted with Ansible Vault it will automatically be decrypted.
-  community.kubernetes.k8s:
-    state: present
-    definition: "{{ lookup('file', '/testing/deployment.yml') | from_yaml }}"
-
-- name: Read definition template file from the Ansible controller file system
-  community.kubernetes.k8s:
-    state: present
-    template: '/testing/deployment.j2'
-
-- name: Read definition template file from the Ansible controller file system that uses custom start/end strings
-  community.kubernetes.k8s:
-    state: present
-    template:
-      path: '/testing/deployment.j2'
-      variable_start_string: '[['
-      variable_end_string: ']]'
-
-- name: fail on validation errors
-  community.kubernetes.k8s:
-    state: present
-    definition: "{{ lookup('template', '/testing/deployment.yml') | from_yaml }}"
-    validate:
-      fail_on_error: yes
-
-- name: warn on validation errors, check for unexpected properties
-  community.kubernetes.k8s:
-    state: present
-    definition: "{{ lookup('template', '/testing/deployment.yml') | from_yaml }}"
-    validate:
-      fail_on_error: no
-      strict: yes
-
-# Download and apply manifest
-- name: Download metrics-server manifest to the cluster.
-  ansible.builtin.get_url:
-    url: https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-    dest: ~/metrics-server.yaml
-    mode: '0664'
-
-- name: Apply metrics-server manifest to the cluster.
-  community.kubernetes.k8s:
-    state: present
-    src: ~/metrics-server.yaml
-Return Values
+  tasks:
+       - name: Install Git
+         yum:
+            name: git
+            state: latest
+       
+       - name: Run Install Helm
+         shell: curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+         args:
+            executable: /bin/bash            
+       - name: Add Bitnami's chart repository.
+         community.kubernetes.helm_repository:
+           name: bitnami
+           repo_url: "https://charts.bitnami.com/bitnami"
+       - name: Add Grafana repository..
+         community.kubernetes.helm_repository:
+           name: grafana
+           repo_url: "https://grafana.github.io/helm-charts"
+       - name: Create namespace kafka
+         shell: kubectl create namespace kafka
+         args:
+            executable: /bin/bash  
+       - name: Create CustomResourceDefinition
+         shell: kubectl create -f https://strimzi.io/install/latest?namespace=kafka -n kafka
+         args:
+            executable: /bin/bash 
+       - name: kafka-persistent-single.yaml
+         shell:
+             kubectl apply -f /vagrant/kafka/kafka-persistent-single.yaml -n kafka
+         args:
+            executable: /bin/bash  
+       - name: Wait for Kafka Brokers
+         wait_for:
+         port: 30094
+         delay: 120
+       - name: Run install Kafkadrop
+         shell: /vagrant/kafka/kafkadrop.sh
+         args:
+            executable: /bin/bash
+       - name: Wait for Kafkadrop 
+         wait_for:
+         port: 30900
+         delay: 120
+       - name: Create namespace Monitoring
+         shell: kubectl create namespace monitoring  
+         args:
+            executable: /bin/bash
+       - name: Create Prometheus
+         shell: helm install prometheus --set prometheus.service.type=NodePort,prometheus.service.nodePort=30090 bitnami/kube-prometheus -n monitoring
+         args:
+            executable: /bin/bash
+       - name: Configuring Prometheus 1 - 4 = create secret
+         shell: kubectl create secret generic additional-scrape-configs --from-file=/vagrant/prometheus/prometheus-additional.yaml -n monitoring
+         args:
+            executable: /bin/bash
+       - name: Configuring Prometheus 2 - 4 = pod-monitor
+         shell: kubectl apply -f /vagrant/prometheus/strimzi-pod-monitor.yaml -n monitoring
+         args:
+            executable: /bin/bash     
+       - name: Configuring Prometheus 3 - 4 = prometheus-rules
+         shell: kubectl apply -f /vagrant/prometheus/prometheus-rules.yaml -n monitoring
+         args:
+            executable: /bin/bash  
+       - name: Configuring Prometheus 4 - 4 = prometheus.yaml
+         shell: kubectl apply -f /vagrant/prometheus/prometheus.yaml -n monitoring
+         args:
+            executable: /bin/bash 
+       - name: Wait for Prometheus 
+         wait_for:
+         port: 30090
+         delay: 120            
+       - name: Configuring Grafana
+         shell: helm install grafana -f /vagrant/grafana/grafana.yaml grafana/grafana -n monitoring
+         args:
+            executable: /bin/bash
+       - name: Wait for Grafana 
+         wait_for:
+         port: 30300
+         delay: 120            
+       - name: Configuring Producer Kafka
+         shell: kubectl apply -f /vagrant/kafka_python/producer.yaml
+         args:
+            executable: /bin/bash 
+       - name: Wait for Producer Python     
+         wait_for:
+           timeout: 120  
+         delegate_to: localhost           
+       - name: Configuring Consumer Kafka
+         shell: kubectl apply -f /vagrant/kafka_python/consumer.yaml
+         args:
+            executable: /bin/bash
+       - name: display post install message
+         debug: 
+           msg: 
+             - "Things left to do. In your host machine go:"
+             - "http://127.0.0.1:30900 - To open Kafkadrop and see topic and messages"
+             - "http://127.0.0.1:30090 - Prometheus"
+             - "http://127.0.0.1:30300 - Granafa Dashboards"
+             - "Brkoker Kafka: 127.0.0.1:30094"
+             - "https://github.com/mordp1/lab_kafka"
+             - "To see all pods : kubectl get pods --all-namespaces"
+             - "Best Regards"
