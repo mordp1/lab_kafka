@@ -1,4 +1,4 @@
-# lab_kafka - Vagrant + Asible + Minikube + Kafka + Prometheus + Grafana + Kafdrop + Producer and Consumer Python
+# lab_kafka - Vagrant + Ansible + Minikube + Kafka + Prometheus + Grafana + Kafdrop + Producer and Consumer Python
 
 #### Minimum Requirements :
  - Vagrant 
