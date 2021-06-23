@@ -1,4 +1,4 @@
-# lab_kafka - Vagrant + Asible + Minikube + Kafka + Prometheus + Grafana + Kafdrop + Producer and Consumer Python
+# lab_kafka - Vagrant + Ansible + Minikube + Kafka + Prometheus + Grafana + Kafdrop + Producer and Consumer Python
 
 #### Minimum Requirements :
  - Vagrant 
@@ -16,6 +16,8 @@
   cd /vagrant/
   ansible-playbook main.yaml
  ```
+#### The Time to up all the system it's approx 10 min.
+
 #### Acces the Systems in your computer: 
  
 Kafdrop - To see Messages and other things for Apache Kafka:
