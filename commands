@@ -1,0 +1,59 @@
+Vangrant up
+Vangrant ssh
+## Install dependences
+yum install -y git
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+
+## Kafka 
+
+kubectl create namespace kafka
+
+kubectl create -f https://strimzi.io/install/latest?namespace=kafka -n kafka
+
+kubectl apply -f /vagrant/kafka/kafka-persistent-single.yaml -n kafka
+#time 6m30s
+
+kubectl create -n kafka -f /vagrant/kafka/create-topic.yaml
+
+### Prometheus
+
+kubectl create namespace monitoring
+
+helm repo add bitnami https://charts.bitnami.com/bitnami
+
+helm install prometheus --set prometheus.service.type=NodePort,prometheus.service.nodePort=30090 bitnami/kube-prometheus -n monitoring
+
+#http://127.0.0.1:30090
+
+#kubectl port-forward --namespace default svc/prometheus-kube-prometheus-prometheus 9090:9090 --address 0.0.0.0
+
+kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml -n monitoring
+
+kubectl apply -f /vagrant/prometheus/strimzi-pod-monitor.yaml -n monitoring
+kubectl apply -f /vagrant/prometheus/prometheus-rules.yaml -n monitoring
+kubectl apply -f /vagrant/prometheus/prometheus.yaml -n monitoring
+
+##=========================================================================================================
+##Grafana
+
+helm repo add grafana https://grafana.github.io/helm-charts
+
+helm install grafana -f /vagrant/grafana/grafana.yaml -n monitoring
+
+# http://127.0.0.1:30300
+
+################
+## kafdrop
+
+git clone https://github.com/obsidiandynamics/kafdrop && cd kafdrop
+
+helm upgrade -i kafdrop chart --set image.tag=3.27.0 \
+    --set kafka.brokerConnect=my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092 \
+    --set server.servlet.contextPath="/" \
+    --set jvm.opts="-Xms32M -Xmx64M"
+
+##########
+# Producer and Consumer Kafka
+
+kubectl apply -f /vagrant/kafka_python/producer.yaml
+kubectl apply -f /vagrant/kafka_python/consumer.yaml
