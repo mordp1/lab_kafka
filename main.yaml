@@ -41,7 +41,7 @@
          port: 30094
          delay: 120
        - name: Run install Kafkadrop
-         shell: /vagrant/kafka/kafkadrop.sh
+         shell: /vagrant/kafka/kafdrop.sh
          args:
             executable: /bin/bash
        - name: Wait for Kafkadrop 
