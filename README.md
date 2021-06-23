@@ -12,7 +12,9 @@ Minimum Requirements :
   - cd lab_kafka
   - vagrant up
   - vagrant ssh
-  - main.yaml
+  - sudo su -
+  - cd vagrant/
+  - ansible-playbook main.yaml main.yaml
  
 # Acces the Systems in your computer: 
  
