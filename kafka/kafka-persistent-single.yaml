@@ -20,11 +20,12 @@ spec:
         type: nodeport
         tls: false
         configuration:
-          bootstrap:
-            nodePort: 30092
+          preferredNodePortAddressType: InternalDNS
           brokers:
           - broker: 0
-            nodePort: 30094       
+            advertisedHost : 127.0.0.1
+            advertisedPort: 30094
+            nodePort: 30094     
     config:
       offsets.topic.replication.factor: 1
       transaction.state.log.replication.factor: 1
